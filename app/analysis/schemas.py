@@ -1,24 +1,23 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Any, Optional
+from typing import Dict, List, Optional
 
-class AnalysisResultCreate(BaseModel):
+
+class AnalysisResultBase(BaseModel):
     text_id: int
-    method: str
-    result: Any
-    
-    
-class AnalysisResultRead(BaseModel):
+    method_id: str
+    keywords: List[str]
+    definitions: List[Dict[str, str]]
+    metrics: Optional[Dict[str, float]] = None
+
+
+class AnalysisResultCreate(AnalysisResultBase):
+    pass
+
+
+class AnalysisResultRead(AnalysisResultBase):
     id: int
-    text_id: int
-    method: str
-    result: dict
     created_at: datetime
-    
+
     class Config:
-        orm_mode = True
-        
-        
-class AnalysisResultUpdate(BaseModel):
-    method: Optional[str] = None
-    result: Optional[Any] = None      
+        from_attributes = True

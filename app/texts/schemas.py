@@ -1,16 +1,22 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
-class TextCreate(BaseModel):
-    title: str
-    content: str
-    
+
+class TextBase(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    language: str = "uk"
+    source_type: str = "manual_upload"
+
+
+class TextCreate(TextBase):
+    pass
+
 
 class TextRead(BaseModel):
     id: int
-    title: str
-    content: str
     created_at: datetime
-    
+
     class Config:
-        orm_mode = True
+        from_attributes = True
