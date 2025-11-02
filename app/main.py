@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 from contextlib import asynccontextmanager
+from config import settings
 
 # from database import create_tables
 
@@ -12,7 +13,7 @@ async def lifespan(app: FastAPI):
     print('DBs turn off.')  
     
     
-app = FastAPI(title="Text Analysis Service", lifespan=lifespan)
+app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 
     
 @app.get("/", summary="Отримання базового шляху", tags=["Основні маршрути"])

@@ -9,13 +9,14 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: "postgresql+asyncpg://postgres:postgres@db:5432/text_analysis_db"
+      POSTGRES_URL: "postgresql+asyncpg://postgres:postgres@db:5432/text_analysis_db"
+    working_dir: /app/app
     volumes:
-      - .:/app
+      - ./app:/app/app
 
   db:
     image: postgres:17
-    container_name: text_analysis_db
+    container_name: db
     restart: always
     environment:
       POSTGRES_DB: text_analysis_db
@@ -24,7 +25,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./.containers/db:/var/lib/postgresql/data
 
   pgadmin4:
     image: dpage/pgadmin4:9
@@ -40,5 +41,3 @@ services:
     depends_on:
       - db
 
-volumes:
-  postgres_data:
