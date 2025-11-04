@@ -14,7 +14,7 @@ class TextCreate(TextBase):
     pass
 
 
-class TextRead(BaseModel):
+class TextRead(TextBase):
     id: int
     created_at: datetime
 

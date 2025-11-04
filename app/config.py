@@ -1,3 +1,4 @@
+import os
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,7 +7,7 @@ class Config(BaseSettings):
     
     POSTGRES_URL: PostgresDsn
     
-    model_config = SettingsConfigDict(env_file="../.env")
+    model_config = SettingsConfigDict(env_file=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")))
 
 
 settings = Config()

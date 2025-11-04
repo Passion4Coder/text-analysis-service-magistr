@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 class AnalysisResultBase(BaseModel):
     text_id: int
-    method_id: str
+    method_id: int
     keywords: List[str]
     definitions: List[Dict[str, str]]
     metrics: Optional[Dict[str, float]] = None
