@@ -3,6 +3,8 @@ import uvicorn
 from contextlib import asynccontextmanager
 from config import settings
 
+from analysis.router import router as analysis_router
+
 # from database import create_tables
 
 
@@ -15,6 +17,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
+
+app.include_router(analysis_router)
 
 
 @app.get("/", summary="Отримання базового шляху", tags=["Основні маршрути"])

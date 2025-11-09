@@ -1,4 +1,4 @@
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional
 from sqlalchemy import JSON, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
@@ -6,10 +6,14 @@ from datetime import datetime
 from database import Base
 
 
-if TYPE_CHECKING:
-    from methods.models import MethodOrm
-    from notes.models import NoteOrm
-    from texts.models import TextOrm
+from methods.models import MethodOrm
+from notes.models import NoteOrm
+from texts.models import TextOrm
+
+# if TYPE_CHECKING:
+#     from methods.models import MethodOrm
+#     from notes.models import NoteOrm
+#     from texts.models import TextOrm
 
 
 class AnalysisResultOrm(Base):
