@@ -4,7 +4,7 @@ from notes.models import NoteOrm
 from texts.models import TextOrm
 from methods.hybrid_extractor import combine_tfidf_rake
 from analysis.utils import preprocess_text, lemmatize_text
-from database import async_session_factory
+from core.database import async_session_factory
 from analysis.models import AnalysisResultOrm
 from methods.models import MethodOrm
 

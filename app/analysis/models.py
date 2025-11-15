@@ -3,17 +3,12 @@ from sqlalchemy import JSON, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
-from database import Base
+from core.database import Base
 
 
 from methods.models import MethodOrm
 from notes.models import NoteOrm
 from texts.models import TextOrm
-
-# if TYPE_CHECKING:
-#     from methods.models import MethodOrm
-#     from notes.models import NoteOrm
-#     from texts.models import TextOrm
 
 
 class AnalysisResultOrm(Base):

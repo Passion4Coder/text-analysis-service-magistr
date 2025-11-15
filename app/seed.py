@@ -1,7 +1,7 @@
 import asyncio
 from sqlalchemy.future import select
 
-from database import async_session_factory
+from core.database import async_session_factory
 from methods.models import MethodOrm
 from texts.models import TextOrm
 from analysis.models import AnalysisResultOrm

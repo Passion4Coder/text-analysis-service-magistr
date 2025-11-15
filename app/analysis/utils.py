@@ -33,7 +33,7 @@ def preprocess_text(text: str) -> str:
 
 
 def lemmatize_text(text: str) -> Optional[str]:
-    """ Повернути лематизований текст, якщо stanza доступна, інакше None."""
+    """Повернути лематизований текст, якщо stanza доступна, інакше None."""
     pipe = ensure_stanza()
     if not pipe:
         return None

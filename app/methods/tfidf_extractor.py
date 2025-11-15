@@ -2,46 +2,7 @@ from typing import List, Optional, Tuple, Sequence
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 
-uk_stopwords = [
-    "і",
-    "в",
-    "у",
-    "на",
-    "з",
-    "до",
-    "та",
-    "але",
-    "що",
-    "як",
-    "це",
-    "то",
-    "ж",
-    "ви",
-    "ми",
-    "він",
-    "вона",
-    "вони",
-    "цей",
-    "такий",
-    "той",
-    "або",
-    "чи",
-    "для",
-    "про",
-    "після",
-    "перед",
-    "через",
-    "тому",
-    "бути",
-    "є",
-    "був",
-    "була",
-    "аби",
-    "де",
-    "коли",
-    "так",
-    "ні",
-]
+from analysis.stopwords_dict import UK_STOPWORDS
 
 
 def _simple_preprocess(text: str) -> str:
@@ -65,7 +26,7 @@ def extract_keywords_tfidf(
     cleaned = [_simple_preprocess(d) for d in docs]
 
     if stop_words is None:
-        stop_words = uk_stopwords
+        stop_words = list(UK_STOPWORDS)
 
     vectorizer = TfidfVectorizer(
         stop_words=stop_words, ngram_range=ngram_range, max_features=max_features
