@@ -3,12 +3,12 @@ from sqlalchemy import JSON, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
-from core.database import Base
+from app.core.database import Base
 
 
-from methods.models import MethodOrm
-from notes.models import NoteOrm
-from texts.models import TextOrm
+from app.methods.models import MethodOrm
+from app.notes.models import NoteOrm
+from app.texts.models import TextOrm
 
 
 class AnalysisResultOrm(Base):

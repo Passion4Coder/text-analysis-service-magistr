@@ -20,17 +20,17 @@ def test_tfidf_detects_expected_keywords():
     doc = "Машинне навчання — це галузь штучного інтелекту."
     res = extract_keywords_tfidf([doc], top_n=10)
 
-    keywords = [t for t, _ in res[0]]
+    keywords = [t.lower() for t, _ in res[0]]
 
-    assert any("машинне" in k for k in keywords)
-    assert any("інтелекту" in k for k in keywords)
+    assert any("машинне" in k.lower() for k in keywords)
+    assert any("інтелекту" in k.lower() for k in keywords)
 
 
 def test_tfidf_respects_stopwords():
     doc = "Це приклад речення, яке містить стоп-слова."
     res = extract_keywords_tfidf([doc], top_n=10)
 
-    keywords = [t for t, _ in res[0]]
+    keywords = [t.lower() for t, _ in res[0]]
 
     assert not any(k in UK_STOPWORDS for k in keywords)
 

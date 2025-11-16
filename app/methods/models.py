@@ -2,11 +2,11 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.database import Base
+from app.core.database import Base
 
 
 if TYPE_CHECKING:
-    from analysis.models import AnalysisResultOrm
+    from app.analysis.models import AnalysisResultOrm
 
 
 class MethodOrm(Base):

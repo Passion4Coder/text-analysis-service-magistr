@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
-from core.lifespan import lifespan
-from core.config import settings
+from app.core.lifespan import lifespan
+from app.core.config import settings
 
-from analysis.router import router as analysis_router
+from app.analysis.router import router as analysis_router
 
 
 def create_app() -> FastAPI:

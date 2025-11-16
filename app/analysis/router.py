@@ -1,10 +1,10 @@
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
-from analysis.service import analyze_and_save
-from analysis.stopwords_dict import UK_STOPWORDS
-from methods.rake_extractor import extract_keywords_rake
-from methods.tfidf_extractor import extract_keywords_tfidf
+from app.analysis.service import analyze_and_save
+from app.analysis.stopwords_dict import UK_STOPWORDS
+from app.methods.rake_extractor import extract_keywords_rake
+from app.methods.tfidf_extractor import extract_keywords_tfidf
 
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
 

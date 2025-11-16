@@ -1,8 +1,9 @@
+import math
 from typing import List, Tuple, Sequence, Optional, Dict
 from .tfidf_extractor import extract_keywords_tfidf
 from .rake_extractor import extract_keywords_rake
-from stop_words import get_stop_words
-import math
+
+from ..analysis.stopwords_dict import UK_STOPWORDS
 
 
 def _normalize_scores(items: List[Tuple[str, float]]) -> Dict[str, float]:
@@ -30,7 +31,9 @@ def combine_tfidf_rake(
 ):
     """Повернути комбіновані рейтингові ключові слова для кожного документа у вигляді списку (термін, оцінка)."""
     if stop_words is None:
-        stop_words = get_stop_words("ukrainian")
+        stop_words = list(UK_STOPWORDS)
+    else:
+        stop_words = list(stop_words)
 
     tfidf_res = extract_keywords_tfidf(docs, top_n=top_n, stop_words=stop_words)
     try:
@@ -64,4 +67,5 @@ def combine_tfidf_rake(
 
         ranked = sorted(filtered, key=lambda x: x[1], reverse=True)
         combined_list.append(ranked[:top_n])
+
     return combined_list

@@ -3,12 +3,12 @@ from sqlalchemy import String, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
-from core.database import Base
+from app.core.database import Base
 
 
 if TYPE_CHECKING:
-    from analysis.models import AnalysisResultOrm
-    from notes.models import NoteOrm
+    from app.analysis.models import AnalysisResultOrm
+    from app.notes.models import NoteOrm
 
 
 class TextOrm(Base):

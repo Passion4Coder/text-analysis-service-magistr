@@ -1,7 +1,8 @@
 import re
-from rake_nltk import Rake
 from typing import List, Tuple, Optional, Sequence
-from stop_words import get_stop_words
+from rake_nltk import Rake
+
+from ..analysis.stopwords_dict import UK_STOPWORDS
 
 
 ABBREVIATIONS = [
@@ -85,7 +86,9 @@ def extract_keywords_rake(
 ) -> List[List[Tuple[str, float]]]:
     """Повернути ключові слова RAKE для кожного документа у вигляді (фраза, оцінка)."""
     if stop_words is None:
-        stop_words = get_stop_words("ukrainian")
+        stop_words = list(UK_STOPWORDS)
+    else:
+        stop_words = list(stop_words)
 
     results = []
     for doc in docs:

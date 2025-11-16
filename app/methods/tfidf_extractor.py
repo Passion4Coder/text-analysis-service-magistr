@@ -1,8 +1,8 @@
+import re
 from typing import List, Optional, Tuple, Sequence
 from sklearn.feature_extraction.text import TfidfVectorizer
-import re
 
-from analysis.stopwords_dict import UK_STOPWORDS
+from ..analysis.stopwords_dict import UK_STOPWORDS
 
 
 def _simple_preprocess(text: str) -> str:
@@ -47,4 +47,5 @@ def extract_keywords_tfidf(
             reverse=True,
         )
         results.append(ranked[:top_n])
+
     return results
