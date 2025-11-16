@@ -35,7 +35,7 @@ async def analyze_tfidf(data: AnalysisRequestTfidf):
         top_n=data.top_n,
         ngram_range=data.ngram_range,
         max_features=data.max_features,
-        stop_words=UK_STOPWORDS,
+        stop_words=list(UK_STOPWORDS),
     )
     return {"method": "TF-IDF", "keywords": keywords}
 
@@ -45,7 +45,7 @@ async def analyze_rake(data: AnalysisRequestRake):
     keywords = extract_keywords_rake(
         [data.content],
         top_n=data.top_n,
-        stop_words=UK_STOPWORDS,
+        stop_words=list(UK_STOPWORDS),
     )
     return {"method": "RAKE", "keywords": keywords}
 

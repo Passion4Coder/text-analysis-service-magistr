@@ -27,6 +27,8 @@ def extract_keywords_tfidf(
 
     if stop_words is None:
         stop_words = list(UK_STOPWORDS)
+    else:
+        stop_words = list(stop_words)
 
     vectorizer = TfidfVectorizer(
         stop_words=stop_words, ngram_range=ngram_range, max_features=max_features
