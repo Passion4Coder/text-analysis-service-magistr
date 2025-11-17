@@ -10,6 +10,10 @@ class Config(BaseSettings):
 
     POSTGRES_URL: PostgresDsn
 
+    DEBUG: bool = True
+
+    ADMIN_SECRET: str
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(BASE_DIR, ".env"), env_file_encoding="utf-8"
     )

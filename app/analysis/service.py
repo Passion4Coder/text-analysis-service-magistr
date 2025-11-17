@@ -138,3 +138,74 @@ async def analyze_and_save(
         "note_structure": note_structure,
         "note_summary": note_summary,
     }
+
+
+async def fetch_all_analyses():
+    """Повертає список всіх текстів + базову інформацію про аналіз."""
+    async with async_session_factory() as session:
+        q = await session.execute(
+            select(
+                AnalysisResultOrm.id,
+                AnalysisResultOrm.text_id,
+                AnalysisResultOrm.keywords,
+                AnalysisResultOrm.metrics,
+                AnalysisResultOrm.created_at,
+                TextOrm.title,
+                TextOrm.content,
+                MethodOrm.name.label("method_name"),
+            )
+            .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
+            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
+            .order_by(AnalysisResultOrm.created_at.desc())
+        )
+        rows = q.mappings().all()
+        return [dict(r) for r in rows]
+
+
+async def fetch_analysis_by_text_id(text_id: int):
+    """Повертає повний результат аналізу разом із нотатками."""
+    async with async_session_factory() as session:
+        q = await session.execute(
+            select(AnalysisResultOrm, TextOrm, MethodOrm, NoteOrm)
+            .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
+            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
+            .join(NoteOrm, NoteOrm.analysis_result_id == AnalysisResultOrm.id)
+            .where(AnalysisResultOrm.text_id == text_id)
+        )
+
+        row = q.mappings().first()
+
+        if not row:
+            return None
+
+        ar: AnalysisResultOrm = row["AnalysisResultOrm"]
+        text: TextOrm = row["TextOrm"]
+        method: MethodOrm = row["MethodOrm"]
+        note: NoteOrm = row["NoteOrm"]
+
+        return {
+            "analysis_result_id": ar.id,
+            "text_id": text.id,
+            "title": text.title,
+            "content": text.content,
+            "method": method.name,
+            "keywords": ar.keywords,
+            "definitions": ar.definitions,
+            "metrics": ar.metrics,
+            "note_structure": note.structure,
+            "note_summary": note.summary,
+            "created_at": ar.created_at.isoformat(),
+        }
+
+
+async def fetch_keywords_only(text_id: int):
+    """Повертає лише keywords з аналізу."""
+    async with async_session_factory() as session:
+        q = await session.execute(
+            select(AnalysisResultOrm.keywords).where(
+                AnalysisResultOrm.text_id == text_id
+            )
+        )
+
+        row = q.scalar_one_or_none()
+        return row

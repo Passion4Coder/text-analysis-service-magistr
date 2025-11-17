@@ -1,31 +1,21 @@
-from typing import Optional
-from fastapi import APIRouter
-from pydantic import BaseModel
-from app.analysis.service import analyze_and_save
+from typing import List
+from fastapi import APIRouter, HTTPException
+from app.analysis.schemas import (
+    AnalysisRequestHybrid,
+    AnalysisRequestRake,
+    AnalysisRequestTfidf,
+    AnalysisResultRead,
+)
+from app.analysis.service import (
+    analyze_and_save,
+    fetch_all_analyses,
+    fetch_analysis_by_text_id,
+)
 from app.analysis.stopwords_dict import UK_STOPWORDS
 from app.methods.rake_extractor import extract_keywords_rake
 from app.methods.tfidf_extractor import extract_keywords_tfidf
 
-router = APIRouter(prefix="/analysis", tags=["Analysis"])
-
-
-class AnalysisRequestTfidf(BaseModel):
-    content: str
-    top_n: int = 10
-    ngram_range: tuple[int, int] = (1, 2)
-    max_features: int | None = 5000
-
-
-class AnalysisRequestRake(BaseModel):
-    content: str
-    top_n: int = 10
-
-
-class AnalysisRequestHybrid(BaseModel):
-    title: Optional[str] = None
-    content: str
-    method_name: str = "hybrid"
-    text_id: Optional[int] = None
+router = APIRouter(prefix="/analysis", tags=["Результати 🔍"])
 
 
 @router.post("/tfidf", summary="Отримати ключові слова за методом TF-IDF")
@@ -61,3 +51,37 @@ async def analyze_text(data: AnalysisRequestHybrid):
         method_name=data.method_name,
     )
     return result
+
+
+@router.get(
+    "/list",
+    summary="Отримати список усіх проаналізованих текстів",
+    response_model=List[AnalysisResultRead],
+)
+async def get_analysis_list():
+    analyses = await fetch_all_analyses()
+    return {"count": len(analyses), "items": analyses}
+
+
+@router.get(
+    "/{text_id}",
+    summary="Отримати повний результат аналізу",
+    response_model=AnalysisResultRead,
+)
+async def get_analysis(text_id: int):
+    analysis = await fetch_analysis_by_text_id(text_id)
+
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="Аналіз не знайдено.")
+
+    return analysis
+
+
+@router.get("/{text_id}/keywords", summary="Отримати лише ключові слова")
+async def get_keywords_only(text_id: int):
+    analysis = await fetch_analysis_by_text_id(text_id)
+
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="Аналіз не знайдено.")
+
+    return {"keywords": analysis.get("keywords", [])}

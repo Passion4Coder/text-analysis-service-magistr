@@ -1,11 +1,11 @@
 import asyncio
 from sqlalchemy.future import select
 
-from core.database import async_session_factory
-from methods.models import MethodOrm
-from texts.models import TextOrm
-from analysis.models import AnalysisResultOrm
-from notes.models import NoteOrm
+from app.core.database import async_session_factory
+from app.methods.models import MethodOrm
+from app.texts.models import TextOrm
+from app.analysis.models import AnalysisResultOrm
+from app.notes.models import NoteOrm
 
 
 async def seed_database():
@@ -22,6 +22,11 @@ async def seed_database():
                     name="definition_extraction",
                     description="Витягує визначення термінів із тексту.",
                     parameters={"min_confidence": 0.7},
+                ),
+                MethodOrm(
+                    name="hybrid_extraction",
+                    description="Комбінує keyword_extraction та definition_extraction.",
+                    parameters={"top_n": 15, "use_lemmatization": True},
                 ),
             ]
             session.add_all(methods)
@@ -78,6 +83,18 @@ async def seed_database():
                     ],
                     metrics={"precision": 0.89, "recall": 0.85},
                 ),
+                AnalysisResultOrm(
+                    text_id=texts[0].id,
+                    method_id=methods[2].id,
+                    keywords=["машинне навчання", "дані", "модель", "алгоритм"],
+                    definitions=[
+                        {
+                            "термін": "Гібридний метод",
+                            "визначення": "Поєднує виділення ключових слів та визначень термінів для одного тексту.",
+                        }
+                    ],
+                    metrics={"precision": 0.92, "recall": 0.88},
+                ),
             ]
             session.add_all(results)
             await session.commit()
@@ -105,6 +122,15 @@ async def seed_database():
                             "деталі": "Застосовується у перекладах, чат-ботах, аналізі тексту",
                         },
                         summary="Обробка природної мови дозволяє комп’ютерам розуміти людську мову.",
+                    ),
+                    NoteOrm(
+                        text_id=results[2].text_id,
+                        analysis_result_id=results[2].id,
+                        structure={
+                            "вступ": "Гібридний аналіз",
+                            "деталі": "Комбінує ключові слова та визначення термінів",
+                        },
+                        summary="Гібридний метод дозволяє отримати більш точний аналіз тексту.",
                     ),
                 ]
                 session.add_all(notes)
