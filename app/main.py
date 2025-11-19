@@ -8,6 +8,7 @@ from app.methods.router import router as methods_router
 from app.texts.router import router as texts_router
 from app.notes.router import router as notes_router
 from app.admin.router import router as admin_router
+from app.stats.router import router as stats_router
 
 
 def create_app() -> FastAPI:
@@ -17,6 +18,7 @@ def create_app() -> FastAPI:
     app.include_router(texts_router)
     app.include_router(notes_router)
     app.include_router(admin_router)
+    app.include_router(stats_router)
     return app
 
 
