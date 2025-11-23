@@ -23,6 +23,11 @@ class AnalysisResultRead(AnalysisResultBase):
         from_attributes = True
 
 
+class AnalysisResultList(BaseModel):
+    count: int
+    items: List[AnalysisResultRead]
+
+
 class AnalysisRequestTfidf(BaseModel):
     content: str
     top_n: int = 10

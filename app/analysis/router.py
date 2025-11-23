@@ -1,9 +1,9 @@
-from typing import List
 from fastapi import APIRouter, HTTPException
 from app.analysis.schemas import (
     AnalysisRequestHybrid,
     AnalysisRequestRake,
     AnalysisRequestTfidf,
+    AnalysisResultList,
     AnalysisResultRead,
 )
 from app.analysis.service import (
@@ -56,7 +56,7 @@ async def analyze_text(data: AnalysisRequestHybrid):
 @router.get(
     "/list",
     summary="Отримати список усіх проаналізованих текстів",
-    response_model=List[AnalysisResultRead],
+    response_model=AnalysisResultList,
 )
 async def get_analysis_list():
     analyses = await fetch_all_analyses()

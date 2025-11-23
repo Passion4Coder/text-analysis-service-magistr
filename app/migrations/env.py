@@ -7,15 +7,13 @@ from sqlalchemy import pool
 
 from alembic import context
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../app")))
+from app.core.database import Base
+from app.core.config import settings
 
-from database import Base
-from config import settings
-
-from analysis import models as analysis_models
-from methods import models as methods_models
-from notes import models as notes_models
-from texts import models as texts_models
+from app.analysis import models as analysis_models
+from app.methods import models as methods_models
+from app.notes import models as notes_models
+from app.texts import models as texts_models
 
 
 config = context.config

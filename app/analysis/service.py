@@ -147,7 +147,9 @@ async def fetch_all_analyses():
             select(
                 AnalysisResultOrm.id,
                 AnalysisResultOrm.text_id,
+                AnalysisResultOrm.method_id,
                 AnalysisResultOrm.keywords,
+                AnalysisResultOrm.definitions,
                 AnalysisResultOrm.metrics,
                 AnalysisResultOrm.created_at,
                 TextOrm.title,
@@ -184,8 +186,9 @@ async def fetch_analysis_by_text_id(text_id: int):
         note: NoteOrm = row["NoteOrm"]
 
         return {
-            "analysis_result_id": ar.id,
+            "id": ar.id,
             "text_id": text.id,
+            "method_id": method.id,
             "title": text.title,
             "content": text.content,
             "method": method.name,

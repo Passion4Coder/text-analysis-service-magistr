@@ -10,7 +10,8 @@ services:
       - db
     environment:
       POSTGRES_URL: "postgresql+asyncpg://postgres:postgres@db:5432/text_analysis_db"
-    working_dir: /app/app
+      ADMIN_SECRET: supersecret
+    working_dir: /app
     volumes:
       - ./app:/app/app
 
