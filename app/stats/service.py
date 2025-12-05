@@ -1,7 +1,6 @@
 from sqlalchemy import select, func
 from app.core.database import async_session_factory
 from app.analysis.models import AnalysisResultOrm
-from app.methods.models import MethodOrm
 
 
 class StatsService:
@@ -10,7 +9,6 @@ class StatsService:
         async with async_session_factory() as session:
             stmt = (
                 select(
-                    MethodOrm.name,
                     func.avg(AnalysisResultOrm.metrics["precision"].as_float()).label(
                         "precision"
                     ),
@@ -18,8 +16,6 @@ class StatsService:
                         "recall"
                     ),
                 )
-                .join(AnalysisResultOrm, AnalysisResultOrm.method_id == MethodOrm.id)
-                .group_by(MethodOrm.name)
             )
 
             result = await session.execute(stmt)
@@ -52,7 +48,6 @@ class StatsService:
             stmt_time = (
                 select(
                     date_trunc_day,
-                    MethodOrm.name,
                     func.avg(AnalysisResultOrm.metrics["precision"].as_float()).label(
                         "avg_precision"
                     ),
@@ -60,8 +55,6 @@ class StatsService:
                         "avg_recall"
                     ),
                 )
-                .join(MethodOrm, AnalysisResultOrm.method_id == MethodOrm.id)
-                .group_by(date_trunc_day, MethodOrm.name)
                 .order_by(date_trunc_day)
             )
 

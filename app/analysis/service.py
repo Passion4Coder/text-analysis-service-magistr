@@ -6,7 +6,6 @@ from app.methods.hybrid_extractor import combine_tfidf_rake
 from app.analysis.utils import preprocess_text, lemmatize_text
 from app.core.database import async_session_factory
 from app.analysis.models import AnalysisResultOrm
-from app.methods.models import MethodOrm
 
 
 def generate_definitions(keywords: list[str]) -> list[dict]:
@@ -85,17 +84,17 @@ async def analyze_and_save(
     metrics = {"n_terms": len(combined)}
 
     async with async_session_factory() as session:
-        q = await session.execute(
-            select(MethodOrm).where(MethodOrm.name == method_name)
-        )
-        method = q.scalar_one_or_none()
+        # q = await session.execute(
+        #     select(MethodOrm).where(MethodOrm.name == method_name)
+        # )
+        # method = q.scalar_one_or_none()
 
-        if method is None:
-            method = MethodOrm(name=method_name, description="Hybrid TF-IDF + RAKE")
-            session.add(method)
-            await session.commit()
-            await session.refresh(method)
-        method_id = method.id
+        # if method is None:
+        #     method = MethodOrm(name=method_name, description="Hybrid TF-IDF + RAKE")
+        #     session.add(method)
+        #     await session.commit()
+        #     await session.refresh(method)
+        # method_id = method.id
 
         if text_id is None:
             new_text = TextOrm(content=content, title=title)
@@ -106,7 +105,7 @@ async def analyze_and_save(
 
         ar = AnalysisResultOrm(
             text_id=text_id,
-            method_id=method_id,
+            # method_id=method_id,
             keywords=keywords,
             definitions=definitions,
             metrics=metrics,
@@ -154,10 +153,10 @@ async def fetch_all_analyses():
                 AnalysisResultOrm.created_at,
                 TextOrm.title,
                 TextOrm.content,
-                MethodOrm.name.label("method_name"),
+                # MethodOrm.name.label("method_name"),
             )
             .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
-            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
+            # .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
             .order_by(AnalysisResultOrm.created_at.desc())
         )
         rows = q.mappings().all()
@@ -168,9 +167,9 @@ async def fetch_analysis_by_text_id(text_id: int):
     """Повертає повний результат аналізу разом із нотатками."""
     async with async_session_factory() as session:
         q = await session.execute(
-            select(AnalysisResultOrm, TextOrm, MethodOrm, NoteOrm)
+            select(AnalysisResultOrm, TextOrm, NoteOrm)
             .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
-            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
+            # .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
             .join(NoteOrm, NoteOrm.analysis_result_id == AnalysisResultOrm.id)
             .where(AnalysisResultOrm.text_id == text_id)
         )
@@ -182,16 +181,14 @@ async def fetch_analysis_by_text_id(text_id: int):
 
         ar: AnalysisResultOrm = row["AnalysisResultOrm"]
         text: TextOrm = row["TextOrm"]
-        method: MethodOrm = row["MethodOrm"]
+        # method: MethodOrm = row["MethodOrm"]
         note: NoteOrm = row["NoteOrm"]
 
         return {
             "id": ar.id,
             "text_id": text.id,
-            "method_id": method.id,
             "title": text.title,
             "content": text.content,
-            "method": method.name,
             "keywords": ar.keywords,
             "definitions": ar.definitions,
             "metrics": ar.metrics,

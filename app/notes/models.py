@@ -19,13 +19,13 @@ class NoteOrm(Base):
     analysis_result_id: Mapped[int] = mapped_column(
         ForeignKey("analysis_results.id", ondelete="CASCADE")
     )
-    structure: Mapped[Dict] = mapped_column(JSON)
-    summary: Mapped[Optional[str]] = mapped_column(Text)
+    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
+    structured_notes: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
     text: Mapped["TextOrm"] = relationship("TextOrm", back_populates="notes")
     analysis_result: Mapped["AnalysisResultOrm"] = relationship(
-        "AnalysisResultOrm", back_populates="note"
+        "AnalysisResultOrm", back_populates="note", uselist=False
     )

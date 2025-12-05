@@ -2,6 +2,8 @@ import sys
 import os
 from logging.config import fileConfig
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -21,7 +23,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", str(settings.POSTGRES_URL) + "?async_fallback=True")
+config.set_main_option(
+    "sqlalchemy.url", str(settings.POSTGRES_URL) + "?async_fallback=True"
+)
 
 target_metadata = Base.metadata
 
