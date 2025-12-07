@@ -3,7 +3,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 from .embeddings import model
-from .keyword_utils import clean_keyword, UK_STOPWORDS, determine_top_n
+from .keyword_utils import clean_keyword, determine_top_n
+from .ukrainian_stop_words import UK_STOPWORDS
 
 executor = ThreadPoolExecutor(max_workers=4)
 kw_model = KeyBERT(model=model)

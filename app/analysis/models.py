@@ -1,5 +1,5 @@
-from typing import Dict, Optional
-from sqlalchemy import JSON, ForeignKey, DateTime, Integer, func
+from typing import Optional
+from sqlalchemy import JSON, ForeignKey, DateTime, Integer, func, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
@@ -15,9 +15,9 @@ class AnalysisResultOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     text_id: Mapped[int] = mapped_column(ForeignKey("texts.id", ondelete="CASCADE"))
-    lemmas: Mapped[Dict] = mapped_column(JSON, nullable=False)
     keywords: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     embeddings: Mapped[Optional[list[float]]] = mapped_column(JSON, nullable=True)
+    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
