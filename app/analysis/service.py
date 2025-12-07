@@ -1,214 +1,86 @@
-from sqlalchemy import select
-from app.analysis.definitions_dict import DEFINITIONS
+from typing import List, Tuple
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.analysis.summary_generator import (
+    generate_summary_with_keywords,
+    generate_text_embedding,
+    generate_sentence_embeddings,
+)
 from app.notes.models import NoteOrm
 from app.texts.models import TextOrm
-from app.methods.hybrid_extractor import combine_tfidf_rake
-from app.analysis.utils import preprocess_text, lemmatize_text
-from app.core.database import async_session_factory
 from app.analysis.models import AnalysisResultOrm
-from app.methods.models import MethodOrm
+from app.analysis.keyword_extraction import extract_keywords
+from app.core.config import settings
+from .semantic_utils import determine_top_n_semantic
+import time
 
 
-def generate_definitions(keywords: list[str]) -> list[dict]:
-    """Повертає визначення для знайдених ключових слів."""
-    results = []
-    for kw in keywords:
-        for term, definition in DEFINITIONS.items():
-            if kw in term or term in kw:
-                results.append({"term": term, "definition": definition})
-    return results
+async def process_text(
+    session: AsyncSession,
+    text_id: int,
+    top_n: int = 10,
+    diversity: float = 0.5,
+    use_semantic_n: bool = False,
+) -> AnalysisResultOrm:
+    start_time = time.time()
 
+    result = await session.execute(select(TextOrm).where(TextOrm.id == text_id))
+    text_obj: TextOrm = result.scalars().first()
+    if not text_obj:
+        raise ValueError(f"Текст з ідентифікатором номер {text_id} не знайдено.")
 
-def generate_note_structure(content: str, keywords: list[str]) -> dict:
-    """Створює базову структуру нотатки: речення з ключовими словами."""
-    sentences = [s.strip() for s in content.split(".") if s.strip()]
-    relevant_sentences = [s for s in sentences if any(k in s for k in keywords)]
-    return {"keywords": keywords, "sentences_with_keywords": relevant_sentences}
+    sentence_embeddings = await generate_sentence_embeddings(text_obj.content)
+    embedding_vector = await generate_text_embedding(text_obj.content)
 
+    N_recommended = determine_top_n_semantic(sentence_embeddings)
 
-def generate_summary(structure: dict, max_sentences: int = 3) -> str:
-    """Простий summary: об’єднуємо ключові речення до max_sentences."""
-    sentences = structure.get("sentences_with_keywords", [])
-    return ". ".join(sentences[:max_sentences]) + ("." if sentences else "")
+    if use_semantic_n:
+        final_n = N_recommended
+    else:
+        final_n = top_n
 
+    keywords: List[Tuple[str, float]] = await extract_keywords(
+        text_obj.content, top_n=final_n, diversity=diversity
+    )
+    keywords_only = [kw for kw, _ in keywords]
+    keybert_duration_ms = int((time.time() - start_time) * 1000)
 
-def postprocess_keywords(keywords):
-    """Очистка, нормалізація та видалення дублікатів ключових слів."""
-    cleaned = []
-    seen = set()
+    llm_start_time = time.time()
+    summary_text = await generate_summary_with_keywords(keywords_only)
+    llm_duration_ms = int((time.time() - llm_start_time) * 1000)
 
-    corrections = {
-        "стадіонь": "стадіон",
-        "машийнний": "машинний",
-        "навча": "навчання",
-        "ння": "навчання",
+    analysis_result = AnalysisResultOrm(
+        text_id=text_obj.id,
+        keywords=keywords_only,
+        embeddings=embedding_vector if embedding_vector else None,
+        summary_text=summary_text,
+        duration_ms=keybert_duration_ms,
+    )
+
+    session.add(analysis_result)
+    await session.flush()
+
+    structured_notes = {
+        "llm_model": settings.LLM_SUMMARY_MODEL,
+        "key_concepts_count": len(keywords),
+        "keybert_duration_ms": keybert_duration_ms,
+        "embedding_model": settings.EMBEDDING_MODEL,
+        "embedding_vector_dim": len(embedding_vector) if embedding_vector else 0,
+        "llm_duration_ms": llm_duration_ms,
+        "n_user": top_n,
+        "n_semantic_recommended": N_recommended,
+        "n_final": final_n,
     }
 
-    for term, score in keywords:
-        term = term.strip().lower()
+    note = NoteOrm(
+        text_id=text_obj.id,
+        analysis_result_id=analysis_result.id,
+        structured_notes=structured_notes,
+    )
 
-        if term in corrections:
-            term = corrections[term]
+    session.add(note)
 
-        if not term or term in seen:
-            continue
+    await session.commit()
+    await session.refresh(analysis_result)
 
-        tokens = term.split()
-        if any(tok == prev for prev, tok in zip(tokens, tokens[1:])):
-            continue
-
-        seen.add(term)
-        cleaned.append((term, float(score)))
-
-    cleaned = [(t, s) for t, s in cleaned if s > 0]
-
-    return cleaned
-
-
-async def analyze_and_save(
-    content: str,
-    title: str | None = None,
-    text_id: int | None = None,
-    method_name: str = "hybrid",
-):
-    """Аналізує текст, створює запис у texts та analysis_results, повертає результати."""
-
-    clean = preprocess_text(content)
-    lem = lemmatize_text(clean)
-    docs = [lem if lem else clean]
-
-    combined = combine_tfidf_rake(docs, top_n=15)[0]
-    combined = postprocess_keywords(combined)
-    keywords = [t for t, _ in combined]
-
-    definitions = generate_definitions(keywords)
-    metrics = {"n_terms": len(combined)}
-
-    async with async_session_factory() as session:
-        q = await session.execute(
-            select(MethodOrm).where(MethodOrm.name == method_name)
-        )
-        method = q.scalar_one_or_none()
-
-        if method is None:
-            method = MethodOrm(name=method_name, description="Hybrid TF-IDF + RAKE")
-            session.add(method)
-            await session.commit()
-            await session.refresh(method)
-        method_id = method.id
-
-        if text_id is None:
-            new_text = TextOrm(content=content, title=title)
-            session.add(new_text)
-            await session.commit()
-            await session.refresh(new_text)
-            text_id = new_text.id
-
-        ar = AnalysisResultOrm(
-            text_id=text_id,
-            method_id=method_id,
-            keywords=keywords,
-            definitions=definitions,
-            metrics=metrics,
-        )
-        session.add(ar)
-        await session.commit()
-        await session.refresh(ar)
-
-        note_structure = generate_note_structure(content, keywords)
-        note_summary = generate_summary(note_structure, max_sentences=3)
-
-        note = NoteOrm(
-            text_id=text_id,
-            analysis_result_id=ar.id,
-            structure=note_structure,
-            summary=note_summary,
-        )
-        session.add(note)
-        await session.commit()
-        await session.refresh(note)
-
-    return {
-        "analysis_result_id": ar.id,
-        "text_id": text_id,
-        "note_id": note.id,
-        "keywords": [{"term": t, "score": float(s)} for t, s in combined],
-        "definitions": definitions,
-        "metrics": metrics,
-        "note_structure": note_structure,
-        "note_summary": note_summary,
-    }
-
-
-async def fetch_all_analyses():
-    """Повертає список всіх текстів + базову інформацію про аналіз."""
-    async with async_session_factory() as session:
-        q = await session.execute(
-            select(
-                AnalysisResultOrm.id,
-                AnalysisResultOrm.text_id,
-                AnalysisResultOrm.method_id,
-                AnalysisResultOrm.keywords,
-                AnalysisResultOrm.definitions,
-                AnalysisResultOrm.metrics,
-                AnalysisResultOrm.created_at,
-                TextOrm.title,
-                TextOrm.content,
-                MethodOrm.name.label("method_name"),
-            )
-            .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
-            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
-            .order_by(AnalysisResultOrm.created_at.desc())
-        )
-        rows = q.mappings().all()
-        return [dict(r) for r in rows]
-
-
-async def fetch_analysis_by_text_id(text_id: int):
-    """Повертає повний результат аналізу разом із нотатками."""
-    async with async_session_factory() as session:
-        q = await session.execute(
-            select(AnalysisResultOrm, TextOrm, MethodOrm, NoteOrm)
-            .join(TextOrm, TextOrm.id == AnalysisResultOrm.text_id)
-            .join(MethodOrm, MethodOrm.id == AnalysisResultOrm.method_id)
-            .join(NoteOrm, NoteOrm.analysis_result_id == AnalysisResultOrm.id)
-            .where(AnalysisResultOrm.text_id == text_id)
-        )
-
-        row = q.mappings().first()
-
-        if not row:
-            return None
-
-        ar: AnalysisResultOrm = row["AnalysisResultOrm"]
-        text: TextOrm = row["TextOrm"]
-        method: MethodOrm = row["MethodOrm"]
-        note: NoteOrm = row["NoteOrm"]
-
-        return {
-            "id": ar.id,
-            "text_id": text.id,
-            "method_id": method.id,
-            "title": text.title,
-            "content": text.content,
-            "method": method.name,
-            "keywords": ar.keywords,
-            "definitions": ar.definitions,
-            "metrics": ar.metrics,
-            "note_structure": note.structure,
-            "note_summary": note.summary,
-            "created_at": ar.created_at.isoformat(),
-        }
-
-
-async def fetch_keywords_only(text_id: int):
-    """Повертає лише keywords з аналізу."""
-    async with async_session_factory() as session:
-        q = await session.execute(
-            select(AnalysisResultOrm.keywords).where(
-                AnalysisResultOrm.text_id == text_id
-            )
-        )
-
-        row = q.scalar_one_or_none()
-        return row
+    return analysis_result

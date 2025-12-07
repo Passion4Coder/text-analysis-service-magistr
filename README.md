@@ -37,19 +37,9 @@ pip install -r requirements.txt
 
 4\. Запустити бекенд
 
-FastAPI:
-```bash
-fastapi dev app/main.py
-```
-
 Uvicorn:
 ```bash
 uvicorn app.main:app --reload
-```
-
-Python:
-```bash
-python app/main.py
 ```
 ## 📄 Генерація PDF
 

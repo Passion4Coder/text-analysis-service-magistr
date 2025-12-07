@@ -6,10 +6,6 @@ router = APIRouter(prefix="/admin", tags=["Адмін панель 🔧"])
 
 
 async def verify_admin(x_admin_key: str = Header(...)):
-    """
-    Простий приклад перевірки доступу.
-    Можна замінити на токен чи іншу авторизацію.
-    """
     if x_admin_key != settings.ADMIN_SECRET:
         raise HTTPException(status_code=403, detail="Не авторизовано")
 

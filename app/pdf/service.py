@@ -9,10 +9,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from io import BytesIO
 
-from app.methods.hybrid_extractor import combine_tfidf_rake
-from app.methods.rake_extractor import extract_keywords_rake
-from app.methods.tfidf_extractor import extract_keywords_tfidf
-
 
 class PdfService:
     @staticmethod
@@ -78,14 +74,14 @@ class PdfService:
         )
 
         docs = [summary]
-        if method.lower() == "tfidf":
-            keywords_list = extract_keywords_tfidf(docs)[0]
-        elif method.lower() == "rake":
-            keywords_list = extract_keywords_rake(docs)[0]
-        else:
-            keywords_list = combine_tfidf_rake(docs)[0]
+        # if method.lower() == "tfidf":
+        #     keywords_list = extract_keywords_tfidf(docs)[0]
+        # elif method.lower() == "rake":
+        #     keywords_list = extract_keywords_rake(docs)[0]
+        # else:
+        #     keywords_list = combine_tfidf_rake(docs)[0]
 
-        keywords_text = ", ".join([kw for kw, _ in keywords_list])
+        # keywords_text = ", ".join([kw for kw, _ in keywords_list])
 
         elements = []
 
@@ -95,7 +91,7 @@ class PdfService:
         elements.append(Spacer(1, 24))
 
         elements.append(Paragraph("Ключові слова:", section_style))
-        elements.append(Paragraph(keywords_text, body_style))
+        # elements.append(Paragraph(keywords_text, body_style))
         elements.append(Spacer(1, 24))
 
         if glossary:
