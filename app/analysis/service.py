@@ -22,15 +22,22 @@ async def process_text(
     diversity: float = 0.5,
     use_semantic_n: bool = False,
 ) -> AnalysisResultOrm:
+    analysis_result = await session.execute(select(AnalysisResultOrm).where(AnalysisResultOrm.text_id == text_id))
+    analysis_entity = analysis_result.scalars().first()
+
+    if analysis_entity:
+        return analysis_entity
+
     start_time = time.time()
 
-    result = await session.execute(select(TextOrm).where(TextOrm.id == text_id))
-    text_obj: TextOrm = result.scalars().first()
-    if not text_obj:
+    text_result = await session.execute(select(TextOrm).where(TextOrm.id == text_id))
+    text_entity = text_result.scalars().first()
+
+    if not text_entity:
         raise ValueError(f"Текст з ідентифікатором номер {text_id} не знайдено.")
 
-    sentence_embeddings = await generate_sentence_embeddings(text_obj.content)
-    embedding_vector = await generate_text_embedding(text_obj.content)
+    sentence_embeddings = await generate_sentence_embeddings(text_entity.content)
+    embedding_vector = await generate_text_embedding(text_entity.content)
 
     N_recommended = determine_top_n_semantic(sentence_embeddings)
 
@@ -39,9 +46,7 @@ async def process_text(
     else:
         final_n = top_n
 
-    keywords: List[Tuple[str, float]] = await extract_keywords(
-        text_obj.content, top_n=final_n, diversity=diversity
-    )
+    keywords: List[Tuple[str, float]] = await extract_keywords(text_entity.content, top_n=final_n, diversity=diversity)
     keywords_only = [kw for kw, _ in keywords]
     keybert_duration_ms = int((time.time() - start_time) * 1000)
 
@@ -50,7 +55,7 @@ async def process_text(
     llm_duration_ms = int((time.time() - llm_start_time) * 1000)
 
     analysis_result = AnalysisResultOrm(
-        text_id=text_obj.id,
+        text_id=text_entity.id,
         keywords=keywords_only,
         embeddings=embedding_vector if embedding_vector else None,
         summary_text=summary_text,
@@ -73,7 +78,7 @@ async def process_text(
     }
 
     note = NoteOrm(
-        text_id=text_obj.id,
+        text_id=text_entity.id,
         analysis_result_id=analysis_result.id,
         structured_notes=structured_notes,
     )

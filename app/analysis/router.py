@@ -1,17 +1,10 @@
-from typing import AsyncGenerator
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.analysis.service import (
     process_text,
 )
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import async_session_factory
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_factory() as session:
-        yield session
-
+from app.core.database import get_session
 
 router = APIRouter(prefix="/analysis", tags=["Результати 🔍"])
 

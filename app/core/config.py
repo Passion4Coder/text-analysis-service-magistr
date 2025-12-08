@@ -1,4 +1,5 @@
 import os
+
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,9 +16,9 @@ class Config(BaseSettings):
     EMBEDDING_MODEL: str
     LLM_SUMMARY_MODEL: str
 
-    model_config = SettingsConfigDict(
-        env_file=os.path.join(BASE_DIR, ".env"), env_file_encoding="utf-8"
-    )
+    CORS_ORIGINS: str
+
+    model_config = SettingsConfigDict(env_file=os.path.join(BASE_DIR, ".env"), env_file_encoding="utf-8")
 
 
 settings = Config()
