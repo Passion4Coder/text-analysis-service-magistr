@@ -1,6 +1,7 @@
 import re
 from typing import List
 import ollama
+from .adaptive_utils import calculate_optimal_summary_length
 from app.core.config import settings
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -53,8 +54,12 @@ async def generate_sentence_embeddings(text: str) -> List[List[float]]:
     return embeddings
 
 
-async def generate_summary_with_keywords(keywords: list[str]) -> str:
+async def generate_summary_with_keywords(
+    keywords: list[str], text_word_count: int
+) -> str:
     keywords_str = ", ".join([f'"{k}"' for k in keywords])
+
+    R_opt, L_opt, T_opt = calculate_optimal_summary_length(text_word_count)
 
     prompt = f"""
     Ти — експертний помічник для генерації **детального, стислого та зв'язного глибокого викладу (Summary)** на основі ключових термінів.
@@ -66,7 +71,7 @@ async def generate_summary_with_keywords(keywords: list[str]) -> str:
     1.  **Формат:** Вивід повинен складатися **2-3 логічно пов'язаних абзаци**, без нумерованих списків чи заголовків.
     2.  **Зміст:** Використовуй **всі** або більшість наданих термінів, інтегруючи їх у змістовну та логічну розповідь.
     3.  **Мова:** Резюме має бути чистою українською мовою.
-    4.  **Довжина:** Має складатися з **7-10 інформативних речень**, що розкривають тему.
+    4.  **Довжина:** Має складатися з **{R_opt} інформативних речень**, загальною довжиною приблизно **{L_opt} слів**, що розкривають тему.
     
     Ключові терміни: {keywords_str}
     """
@@ -80,7 +85,7 @@ async def generate_summary_with_keywords(keywords: list[str]) -> str:
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
-                options={"temperature": 0.1, "num_predict": 700},
+                options={"temperature": 0.1, "num_predict": T_opt},
             ),
         )
 

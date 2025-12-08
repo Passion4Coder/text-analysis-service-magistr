@@ -22,7 +22,9 @@ async def process_text(
     diversity: float = 0.5,
     use_semantic_n: bool = False,
 ) -> AnalysisResultOrm:
-    analysis_result = await session.execute(select(AnalysisResultOrm).where(AnalysisResultOrm.text_id == text_id))
+    analysis_result = await session.execute(
+        select(AnalysisResultOrm).where(AnalysisResultOrm.text_id == text_id)
+    )
     analysis_entity = analysis_result.scalars().first()
 
     if analysis_entity:
@@ -46,12 +48,18 @@ async def process_text(
     else:
         final_n = top_n
 
-    keywords: List[Tuple[str, float]] = await extract_keywords(text_entity.content, top_n=final_n, diversity=diversity)
+    keywords: List[Tuple[str, float]] = await extract_keywords(
+        text_entity.content, top_n=final_n, diversity=diversity
+    )
     keywords_only = [kw for kw, _ in keywords]
     keybert_duration_ms = int((time.time() - start_time) * 1000)
 
+    text_word_count = len(text_entity.content.split())
+
     llm_start_time = time.time()
-    summary_text = await generate_summary_with_keywords(keywords_only)
+    summary_text = await generate_summary_with_keywords(
+        keywords_only, text_word_count=text_word_count
+    )
     llm_duration_ms = int((time.time() - llm_start_time) * 1000)
 
     analysis_result = AnalysisResultOrm(
@@ -75,6 +83,7 @@ async def process_text(
         "n_user": top_n,
         "n_semantic_recommended": N_recommended,
         "n_final": final_n,
+        "text_word_count": text_word_count,
     }
 
     note = NoteOrm(
