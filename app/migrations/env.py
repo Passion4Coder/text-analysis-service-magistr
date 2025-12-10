@@ -13,7 +13,6 @@ from app.core.database import Base
 from app.core.config import settings
 
 from app.analysis import models as analysis_models
-from app.notes import models as notes_models
 from app.texts import models as texts_models
 
 

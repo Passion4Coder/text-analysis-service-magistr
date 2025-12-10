@@ -46,7 +46,7 @@ pip install -r requirements.txt
 ```bash
 alembic init app/migrations
 
-alembic revision -m "Add a column"
+alembic revision -m "Add a column" --autogenerate
 
 alembic upgrade head
 

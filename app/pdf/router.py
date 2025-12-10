@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from app.pdf.service import PdfService
-from app.notes.service import get_note_by_id
 
 router = APIRouter(
     prefix="/pdf",
@@ -23,7 +22,7 @@ async def download_summary_pdf(
         description="Метод для вибору ключових слів",
     ),
 ):
-    note = await get_note_by_id(note_id)
+    note = None
 
     if not note:
         raise HTTPException(status_code=404, detail="Запис не знайдено.")

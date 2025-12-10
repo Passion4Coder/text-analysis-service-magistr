@@ -1,18 +1,17 @@
-from typing import List, Optional
+from typing import Optional
+
 from sqlalchemy import select
-from app.core.database import async_session_factory
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.utils import paginate
 from app.texts.models import TextOrm
 
 
-async def get_all_texts() -> List[TextOrm]:
-    async with async_session_factory() as session:
-        result = await session.execute(
-            select(TextOrm).order_by(TextOrm.created_at.desc())
-        )
-        return result.scalars().all()
+async def get_texts(session: AsyncSession, page: int, page_size: int):
+    return await paginate(session, select(TextOrm).order_by(TextOrm.created_at.desc()), page, page_size)
 
 
-async def get_text_by_id(text_id: int) -> Optional[TextOrm]:
-    async with async_session_factory() as session:
-        result = await session.execute(select(TextOrm).where(TextOrm.id == text_id))
-        return result.scalar_one_or_none()
+async def get_text_by_id(session: AsyncSession, text_id: int) -> Optional[TextOrm]:
+    result = await session.execute(select(TextOrm).where(TextOrm.id == text_id))
+
+    return result.scalar_one_or_none()

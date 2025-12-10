@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analysis.service import (
-    process_text,
-)
+from app.analysis.service import process_text
 from app.core.database import get_session
 
 router = APIRouter(prefix="/analysis", tags=["Результати 🔍"])
@@ -28,6 +26,7 @@ async def process_text_route(
             diversity=diversity,
             use_semantic_n=use_semantic_n,
         )
+
         return {
             "text_id": analysis_result.text_id,
             "keywords": analysis_result.keywords,
