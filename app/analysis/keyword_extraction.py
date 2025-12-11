@@ -1,10 +1,12 @@
-from keybert import KeyBERT
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
-from .embeddings import model
-from .keyword_utils import clean_keyword, determine_top_n
-from .ukrainian_stop_words import UK_STOPWORDS
+
+from keybert import KeyBERT
+
+from app.analysis.embeddings import model
+from app.analysis.keyword_utils import clean_keyword, determine_top_n
+from app.analysis.ukrainian_stop_words import UK_STOPWORDS
 
 executor = ThreadPoolExecutor(max_workers=4)
 kw_model = KeyBERT(model=model)
@@ -39,7 +41,7 @@ def _extract_keywords_sync(
 
 
 async def extract_keywords(
-    text: str, top_n: int = 10, diversity: float = 0.5
+    text: str, top_n: int, diversity: float
 ) -> List[Tuple[str, float]]:
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(

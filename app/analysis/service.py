@@ -9,6 +9,7 @@ from app.analysis.models import AnalysisResultOrm
 from app.analysis.summary_generator import (
     generate_sentence_embeddings,
     generate_summary_with_keywords,
+    llm_keyword_refinement,
 )
 from app.core.config import settings
 from app.texts.models import TextOrm
@@ -20,18 +21,20 @@ from .semantic_utils import determine_top_n_semantic
 async def process_text(
     session: AsyncSession,
     text_id: int,
-    top_n: int = 10,
-    diversity: float = 0.5,
+    top_n: int,
+    diversity: float,
     use_semantic_n: bool = False,
 ) -> AnalysisResultOrm:
-    analysis_entity: Optional[AnalysisResultOrm] = await get_analysis_result_by_text_id_and_params(
+    analysis_entity: Optional[
+        AnalysisResultOrm
+    ] = await get_analysis_result_by_text_id_and_params(
         session, text_id, top_n, diversity, use_semantic_n
     )
 
     if analysis_entity:
         return analysis_entity
 
-    text_entity: Optional[TextOrm] = get_text_by_id(session, text_id)
+    text_entity: Optional[TextOrm] = await get_text_by_id(session, text_id)
 
     if not text_entity:
         raise ValueError(f"Текст з ідентифікатором {text_id} не знайдено.")
@@ -46,14 +49,25 @@ async def process_text(
     else:
         final_n = top_n
 
-    keywords: List[Tuple[str, float]] = await extract_keywords(text_entity.content, top_n=final_n, diversity=diversity)
+    keywords: List[Tuple[str, float]] = await extract_keywords(
+        text_entity.content, top_n=final_n, diversity=diversity
+    )
     keywords_only = [kw for kw, _ in keywords]
     keybert_duration_ms = int((time.time() - start_time) * 1000)
 
     text_word_count = len(text_entity.content.split())
 
+    validated_keywords = await llm_keyword_refinement(
+        title=text_entity.title,
+        initial_keywords=keywords_only,
+    )
+
     llm_start_time = time.time()
-    summary_text = await generate_summary_with_keywords(keywords_only, text_word_count=text_word_count)
+    summary_text = await generate_summary_with_keywords(
+        title=text_entity.title,
+        keywords=validated_keywords,
+        text_word_count=text_word_count,
+    )
     llm_duration_ms = int((time.time() - llm_start_time) * 1000)
 
     analysis_result = AnalysisResultOrm(

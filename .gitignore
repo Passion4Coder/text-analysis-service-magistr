@@ -15,7 +15,7 @@ dist/
 *.log
 
 # Environments
-.env
+# .env
 .venv
 env/
 venv/

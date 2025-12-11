@@ -1,6 +1,7 @@
+from typing import List
+
 import numpy as np
 from sklearn.cluster import KMeans
-from typing import List
 
 
 def determine_top_n_semantic(
