@@ -14,7 +14,7 @@ router = APIRouter(prefix="/analysis", tags=["Результати 🔍"])
 async def process_text_route(
     text_id: int,
     top_n: int = 10,
-    diversity: float = 0.5,
+    diversity: float = 1.0,
     use_semantic_n: bool = False,
     session: AsyncSession = Depends(get_session),
 ):

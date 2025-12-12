@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.texts.models import TextOrm
 from app.texts.service import get_text_by_id
 
-from .semantic_utils import determine_top_n_semantic
+from app.analysis.semantic_utils import determine_top_n_semantic
 
 
 async def process_text(
@@ -60,6 +60,7 @@ async def process_text(
     validated_keywords = await llm_keyword_refinement(
         title=text_entity.title,
         initial_keywords=keywords_only,
+        final_n=final_n,
     )
 
     llm_start_time = time.time()
@@ -72,14 +73,14 @@ async def process_text(
 
     analysis_result = AnalysisResultOrm(
         text_id=text_entity.id,
-        keywords=keywords_only,
+        keywords=validated_keywords,
         summary_text=summary_text,
         llm_model=settings.LLM_SUMMARY_MODEL,
         embedding_model=settings.EMBEDDING_MODEL,
         text_word_count=text_word_count,
         n_user=top_n,
         n_semantic_recommended=N_recommended,
-        n_final=final_n,
+        n_final=len(validated_keywords),
         use_semantic_n=use_semantic_n,
         diversity=diversity,
         keybert_duration_ms=keybert_duration_ms,
