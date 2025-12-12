@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
 
 class TextResponse(BaseModel):
     id: int
-    title: Optional[str]
+    title: str
     content: str
     language: str
     source_type: str

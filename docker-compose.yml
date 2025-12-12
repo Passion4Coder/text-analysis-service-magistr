@@ -10,6 +10,7 @@ services:
     environment:
       # DB
       POSTGRES_URL: 'postgresql+asyncpg://postgres:postgres@db:5432/text_analysis_db'
+      # SECRET
       ADMIN_SECRET: supersecret
       # Ollama
       OLLAMA_HOST: 'ollama:11434'
