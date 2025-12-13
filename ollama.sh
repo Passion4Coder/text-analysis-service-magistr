@@ -8,8 +8,9 @@ pid=$!
 # Pause for Ollama to start.
 sleep 5
 
-echo "🔴 Retrieve mistral:latest model..."
+echo "🔴 Retrieve models..."
 ollama pull mistral:latest
+ollama pull nomic-embed-text
 echo "🟢 Done!"
 
 # Wait for Ollama process to finish.

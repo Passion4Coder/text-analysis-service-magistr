@@ -1,6 +1,7 @@
 import time
 from typing import List, Optional, Tuple
 
+from sqlalchemy import case, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -12,10 +13,57 @@ from app.analysis.summary_generator import (
     llm_keyword_refinement,
 )
 from app.core.config import settings
+from app.core.utils import paginate
 from app.texts.models import TextOrm
 from app.texts.service import get_text_by_id
 
 from app.analysis.semantic_utils import determine_top_n_semantic
+
+
+async def get_analysis_results(session: AsyncSession, page: int, page_size: int):
+    return await paginate(
+        session,
+        select(
+            AnalysisResultOrm.id,
+            TextOrm.title,
+            case(
+                (
+                    func.length(TextOrm.content) > 128,
+                    func.left(TextOrm.content, 128) + "...",
+                ),
+                else_=TextOrm.content,
+            ).label("content"),
+            AnalysisResultOrm.n_final,
+            AnalysisResultOrm.diversity,
+            AnalysisResultOrm.use_semantic_n,
+            AnalysisResultOrm.created_at,
+        )
+        .join(TextOrm, AnalysisResultOrm.text_id == TextOrm.id)
+        .order_by(AnalysisResultOrm.created_at.desc()),
+        page,
+        page_size,
+    )
+
+
+async def get_analysis_result_by_id(session: AsyncSession, id: int):
+    result = await session.execute(
+        select(
+            AnalysisResultOrm.id,
+            TextOrm.title,
+            TextOrm.content,
+            AnalysisResultOrm.keywords,
+            AnalysisResultOrm.summary_text,
+            AnalysisResultOrm.n_final,
+            AnalysisResultOrm.diversity,
+            AnalysisResultOrm.use_semantic_n,
+            TextOrm.source_type,
+            AnalysisResultOrm.created_at,
+        )
+        .where(AnalysisResultOrm.id == id)
+        .join(TextOrm, AnalysisResultOrm.text_id == TextOrm.id)
+    )
+
+    return result.mappings().one_or_none()
 
 
 async def process_text(
@@ -25,9 +73,7 @@ async def process_text(
     diversity: float,
     use_semantic_n: bool = False,
 ) -> AnalysisResultOrm:
-    analysis_entity: Optional[
-        AnalysisResultOrm
-    ] = await get_analysis_result_by_text_id_and_params(
+    analysis_entity: Optional[AnalysisResultOrm] = await get_analysis_result_by_text_id_and_params(
         session, text_id, top_n, diversity, use_semantic_n
     )
 
@@ -49,9 +95,7 @@ async def process_text(
     else:
         final_n = top_n
 
-    keywords: List[Tuple[str, float]] = await extract_keywords(
-        text_entity.content, top_n=final_n, diversity=diversity
-    )
+    keywords: List[Tuple[str, float]] = await extract_keywords(text_entity.content, top_n=final_n, diversity=diversity)
     keywords_only = [kw for kw, _ in keywords]
     keybert_duration_ms = int((time.time() - start_time) * 1000)
 
