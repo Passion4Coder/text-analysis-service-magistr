@@ -1,54 +1,35 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.pdf.service import PdfService
+from app.analysis.service import get_analysis_result_by_id
+from app.core.database import get_session
+from app.pdf.service import create_summary_pdf
 
-router = APIRouter(
-    prefix="/pdf",
-    tags=["PDF 📄"],
-)
+router = APIRouter(prefix="/pdf", tags=["PDF 📄"])
 
 
 @router.get(
-    "/summary/{note_id}",
+    "/{analysis_id}",
     summary="Завантажити summary у форматі PDF",
     response_description="PDF файл зі summary",
 )
 async def download_summary_pdf(
-    note_id: int,
-    method: str = Query(
-        "hybrid",
-        enum=["tfidf", "rake", "hybrid"],
-        description="Метод для вибору ключових слів",
-    ),
+    analysis_id: int,
+    session: AsyncSession = Depends(get_session),
 ):
-    note = None
+    analysis_result = await get_analysis_result_by_id(session, analysis_id)
 
-    if not note:
+    if not analysis_result:
         raise HTTPException(status_code=404, detail="Запис не знайдено.")
 
-    if not note.summary:
-        raise HTTPException(
-            status_code=400,
-            detail="Для цього запису summary відсутнє.",
-        )
+    if not analysis_result.summary_text:
+        raise HTTPException(status_code=400, detail="Для цього запису summary відсутнє.")
 
-    analysis_result = note.analysis_result
-
-    glossary = None
-    if analysis_result and analysis_result.definitions:
-        glossary = {}
-        for d in analysis_result.definitions:
-            glossary.update(d)
-
-    pdf_stream = PdfService.create_summary_pdf(
-        summary=note.summary, note_id=note_id, method=method, glossary=glossary
-    )
+    pdf_stream = create_summary_pdf(analysis_result.id, analysis_result.summary_text, analysis_result.keywords)
 
     return StreamingResponse(
         pdf_stream,
         media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="summary_{note_id}.pdf"'
-        },
+        headers={"Content-Disposition": f'attachment; filename="summary_{analysis_id}.pdf"'},
     )
