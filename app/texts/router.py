@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -10,8 +11,8 @@ router = APIRouter(prefix="/texts", tags=["Тексти 📄"])
 
 @router.get("", summary="Отримати список всіх текстів")
 async def get(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=2),
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
     session: AsyncSession = Depends(get_session),
 ):
     return await get_texts(session, page, page_size)

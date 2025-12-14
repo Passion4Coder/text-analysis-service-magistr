@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.utils import paginate
+from app.core.pagination import paginate
 from app.texts.models import TextOrm
 
 

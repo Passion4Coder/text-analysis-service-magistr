@@ -1,83 +1,66 @@
-from sqlalchemy import select, func
-from app.core.database import async_session_factory
+from typing import List
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.analysis.models import AnalysisResultOrm
+from app.stats.schemas import KeywordCountStats, StatsResponse
+
+CHART_ROWS_LIMIT = 2_000
 
 
-class StatsService:
-    @staticmethod
-    async def get_graphs_data():
-        async with async_session_factory() as session:
-            stmt = (
-                select(
-                    func.avg(AnalysisResultOrm.metrics["precision"].as_float()).label(
-                        "precision"
-                    ),
-                    func.avg(AnalysisResultOrm.metrics["recall"].as_float()).label(
-                        "recall"
-                    ),
-                )
-            )
+async def get_stats(session: AsyncSession) -> StatsResponse:
+    keyword_count = await get_keyword_count_stats(session)
+    diversity_performance = await get_diversity_performance_stats(session)
+    analysis_duration = await get_analysis_duration_stats(session)
 
-            result = await session.execute(stmt)
-            metrics = []
-            for row in result.all():
-                precision = row.precision
-                recall = row.recall
-                f1_score = (
-                    2 * precision * recall / (precision + recall)
-                    if (precision + recall) > 0
-                    else 0
-                )
-                metrics.append(
-                    {
-                        "method_name": row.name,
-                        "precision": precision,
-                        "recall": recall,
-                        "f1_score": f1_score,
-                    }
-                )
+    return StatsResponse(
+        keyword_count=keyword_count,
+        diversity_performance=diversity_performance,
+        analysis_duration=analysis_duration,
+    )
 
-            precision_comparison = metrics
-            recall_comparison = metrics
-            f1_comparison = metrics
 
-            date_trunc_day = func.date_trunc("day", AnalysisResultOrm.created_at).label(
-                "date"
-            )
+async def get_keyword_count_stats(session: AsyncSession) -> List[KeywordCountStats]:
+    result = await session.execute(
+        select(
+            AnalysisResultOrm.n_user,
+            AnalysisResultOrm.n_semantic_recommended,
+            AnalysisResultOrm.n_final,
+        )
+        .order_by(AnalysisResultOrm.created_at.desc())
+        .limit(CHART_ROWS_LIMIT)
+    )
 
-            stmt_time = (
-                select(
-                    date_trunc_day,
-                    func.avg(AnalysisResultOrm.metrics["precision"].as_float()).label(
-                        "avg_precision"
-                    ),
-                    func.avg(AnalysisResultOrm.metrics["recall"].as_float()).label(
-                        "avg_recall"
-                    ),
-                )
-                .order_by(date_trunc_day)
-            )
+    items = result.mappings().all()[::-1]
 
-            result_time = await session.execute(stmt_time)
-            f1_over_time = [
-                {
-                    "date": row.date.isoformat(),
-                    "method_name": row.name,
-                    "f1_score": (
-                        2
-                        * row.avg_precision
-                        * row.avg_recall
-                        / (row.avg_precision + row.avg_recall)
-                        if (row.avg_precision + row.avg_recall) > 0
-                        else 0
-                    ),
-                }
-                for row in result_time.all()
-            ]
+    return items
 
-            return {
-                "precision_comparison": precision_comparison,
-                "recall_comparison": recall_comparison,
-                "f1_comparison": f1_comparison,
-                "f1_over_time": f1_over_time,
-            }
+
+async def get_diversity_performance_stats(session: AsyncSession) -> List[KeywordCountStats]:
+    result = await session.execute(
+        select(
+            AnalysisResultOrm.diversity.label("diversity"),
+            func.avg(AnalysisResultOrm.keybert_duration_ms).label("avg_keybert_ms"),
+            func.avg(AnalysisResultOrm.llm_duration_ms).label("avg_llm_ms"),
+        )
+        .group_by(AnalysisResultOrm.diversity)
+        .order_by(AnalysisResultOrm.diversity)
+        .limit(CHART_ROWS_LIMIT)
+    )
+
+    items = result.mappings().all()
+
+    return items
+
+
+async def get_analysis_duration_stats(session: AsyncSession) -> List[float]:
+    result = await session.scalars(
+        select((AnalysisResultOrm.keybert_duration_ms + AnalysisResultOrm.llm_duration_ms) / 1000)
+        .order_by(AnalysisResultOrm.created_at.desc())
+        .limit(CHART_ROWS_LIMIT)
+    )
+
+    items = result.all()[::-1]
+
+    return items

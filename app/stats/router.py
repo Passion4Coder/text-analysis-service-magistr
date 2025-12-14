@@ -1,14 +1,13 @@
-from fastapi import APIRouter
-from .service import StatsService
-from .schemas import GraphsResponse
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_session
+from app.stats.schemas import StatsResponse
+from app.stats.service import get_stats
 
 router = APIRouter(prefix="/stats", tags=["Графіки 📊"])
 
 
-@router.get(
-    "/graphs",
-    response_model=GraphsResponse,
-    summary="Отримати дані для графіків метрик",
-)
-async def get_graphs():
-    return await StatsService.get_graphs_data()
+@router.get("", response_model=StatsResponse, summary="Отримати дані для графіків")
+async def get(session: AsyncSession = Depends(get_session)):
+    return await get_stats(session)

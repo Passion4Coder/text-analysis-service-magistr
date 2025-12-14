@@ -7,17 +7,16 @@ from sqlalchemy.future import select
 
 from app.analysis.keyword_extraction import extract_keywords
 from app.analysis.models import AnalysisResultOrm
+from app.analysis.semantic_utils import determine_top_n_semantic
 from app.analysis.summary_generator import (
     generate_sentence_embeddings,
     generate_summary_with_keywords,
     llm_keyword_refinement,
 )
 from app.core.config import settings
-from app.core.utils import paginate
+from app.core.pagination import paginate
 from app.texts.models import TextOrm
 from app.texts.service import get_text_by_id
-
-from app.analysis.semantic_utils import determine_top_n_semantic
 
 
 async def get_analysis_results(session: AsyncSession, page: int, page_size: int):

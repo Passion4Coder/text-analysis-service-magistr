@@ -1,22 +1,21 @@
-from pydantic import BaseModel
 from typing import List
 
-
-class MetricsByMethod(BaseModel):
-    method_name: str
-    precision: float
-    recall: float
-    f1_score: float
+from pydantic import BaseModel
 
 
-class MetricsOverTime(BaseModel):
-    date: str
-    method_name: str
-    f1_score: float
+class KeywordCountStats(BaseModel):
+    n_user: int
+    n_semantic_recommended: int
+    n_final: int
 
 
-class GraphsResponse(BaseModel):
-    precision_comparison: List[MetricsByMethod]
-    recall_comparison: List[MetricsByMethod]
-    f1_comparison: List[MetricsByMethod]
-    f1_over_time: List[MetricsOverTime]
+class DiversityPerformanceStats(BaseModel):
+    diversity: float
+    avg_keybert_ms: float
+    avg_llm_ms: float
+
+
+class StatsResponse(BaseModel):
+    keyword_count: List[KeywordCountStats]
+    diversity_performance: List[DiversityPerformanceStats]
+    analysis_duration: List[float]

@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis.service import get_analysis_result_by_id, get_analysis_results, process_text
@@ -10,8 +10,8 @@ router = APIRouter(prefix="/analysis", tags=["Результати 🔍"])
 
 @router.get("", summary="Отримати список всіх результатів")
 async def get(
-    page: Optional[int],
-    page_size: Optional[int],
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
     session: AsyncSession = Depends(get_session),
 ):
     return await get_analysis_results(session, page, page_size)
@@ -33,8 +33,8 @@ async def get_by_id(id: int, session: AsyncSession = Depends(get_session)):
 )
 async def process_text_route(
     text_id: int,
-    top_n: int = 10,
-    diversity: float = 1.0,
+    top_n: int = Query(10, ge=1, le=25),
+    diversity: float = Query(1, ge=0, le=1),
     use_semantic_n: bool = False,
     session: AsyncSession = Depends(get_session),
 ):
